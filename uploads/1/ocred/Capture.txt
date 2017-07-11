@@ -1,0 +1,25 @@
+Comparison with Other Frameworks
+
+ 
+
+This is denn‘ wnportant.
+
+Odds are. you've had prohlernsyov tried to solve and you've used another liprary to solve
+
+ly the rnost dimeult page in the guide to write, hvt we do feel
+
+ 
+
+thern. Vou're here because you want to know ilvue can solve your speeihe problems better.
+That's what we hope to answer loryov.
+
+we also try very hard to avoid lsias. As the eore team, we obviously like we a lot. There are
+some prohlernswe think it solves petter than anything else out there. lfwe didn't laelieve that,
+we wovldn-t be working on it. we do want to be lair and aeevrate though. where other
+libraries offer signi eant advantages, sueh as React’; vast ecosystem of alternative renderers or
+Knockouts browser support back to lse, we try to list these as well.
+
+we-d also like your help keeping this document up—to—date because the Jaws p world
+rnoves fast! lryov notice an inaeevraey or something that doesn't seen. quite right, please let
+us know by opening an issue.
+

@@ -1,0 +1,82 @@
+<div class="container">
+
+  <div class="navbar navbar-default">
+    <div class="navbar-header">
+      <a class="navbar-brand" href>Ocrify</a>
+    </div>
+  </div>
+
+  <div class="row">
+
+    <div class="col-md-3" *ngIf="disabled_order == undefined">
+
+      <h3>Select files</h3>
+
+      <div ng2FileDrop [ngClass]="{'nv-file-over': hasBaseDropZoneOver}" (fileOver)="fileOverBase($event)" [uploader]="uploader"
+        class="well my-drop-zone">
+        Drop Files Here
+      </div>
+
+      Multiple
+      <input type="file" ng2FileSelect accept="application/pdf,.jpg,.png,.jpeg,.webp" [uploader]="uploader" multiple />
+    </div>
+
+    <div class="col-md-9" style="margin-bottom: 40px">
+
+      <h3>Upload queue</h3>
+      <p>Files Processed: {{files_processed_count+' / '+uploader?.queue?.length }}</p>
+
+      <table class="table">
+        <thead>
+          <tr>
+            <th width="50%">Name</th>
+            <th>Size</th>
+            <th>Progress</th>
+            <th>Status</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let item of uploader.queue">
+            <td><strong>{{ item?.file?.name }}</strong></td>
+            <td *ngIf="item?.options?.isHTML5" nowrap>{{ item?.file?.size/1024/1024 | number:'.2' }} MB</td>
+            <td *ngIf="item?.options?.isHTML5">
+              <div class="progress" style="margin-bottom: 0;">
+                <div class="progress-bar progress-bar-striped progress-bar-success active" role="progressbar" aria-valuemin="0" aria-valuemax="100"
+                  [ngStyle]="{ 'width': fileStat[item.file.name]?.progress + '%' }">
+                  {{fileStat[item.file.name]?.progress + '%'}}
+                </div>
+              </div>
+            </td>
+            <td class="text-center">
+              <span *ngIf="item.isSuccess">{{fileStat[item.file.name]?.stat}}</span>
+              <span *ngIf="item.isCancel"><i class="glyphicon glyphicon-ban-circle"></i></span>
+              <span *ngIf="item.isError"><i class="glyphicon glyphicon-remove"></i></span>
+            </td>
+            <td nowrap>
+              <button type="button" class="btn btn-danger btn-xs" (click)="item.remove()">
+                            <span class="glyphicon glyphicon-trash"></span> Remove
+                        </button>
+            </td>
+
+          </tr>
+        </tbody>
+      </table>
+
+      <div>
+        <button *ngIf="disabled_order == undefined" type="button" class="btn btn-success btn-s" (click)="filter_upload()" [disabled]="!uploader.getNotUploadedItems().length">
+                    <span class="glyphicon glyphicon-upload"></span> Upload
+                </button>
+        <button *ngIf="disabled_order === false" type="button" class="btn btn-success btn-s" (click)="reload()" [disabled]="disabled_order">
+                    <span class="glyphicon glyphicon-upload"></span> Upload Again
+                </button>
+        <button *ngIf="!disabled_order" type="button" class="btn btn-info btn-s" (click)="initDownload()" [disabled]="disabled_order">
+                    <span class="glyphicon glyphicon-download"></span> Download
+                </button>
+      </div>
+
+    </div>
+
+  </div>
+
+</div>
