@@ -14,8 +14,8 @@ const express = require('express'),
   zipFolder = require('zip-folder');
 var connectedUsers = {};
 app.use(cors({
-  'origin': 'http://localhost:4200',
-  // 'origin': 'http://mtcocr',
+  // 'origin': 'http://localhost:4200',
+  'origin': 'http://mtcocr',
   'credentials': true,
 }));
 // app.use(express.static(path.join(__dirname, 'dist')));
@@ -54,7 +54,7 @@ app.post('/upload', function (req, res) {
         'event': 'ocrError',
         'error': 'Connection Unstable'
       });
-      emptyDir(dir);
+      emptyDir(form.uploadDir);
     }
   });
   // log any errors that occur
@@ -146,8 +146,8 @@ io.on('connection', function (socket) {
             'event': 'checkStarted',
             'file': path.basename(file)
           });
-          let check = await execAsync(`python check.py '${file}'`);
-          // let check = 'False';
+          // let check = await execAsync(`python check.py '${file}'`);
+          let check = 'False';
           if (check.toString().trim().includes('True')) {
             console.log("check_stdout:" + check);
             connectedUsers[targetUser].emit('event', {
@@ -162,7 +162,8 @@ io.on('connection', function (socket) {
               'file': path.basename(file)
             });
             console.log("processing pdf " + file);
-            let pypdf_response = await execAsync(`pypdfocr '${file}'`);
+            console.log(`pypdfocr '${file}' -c  ${path.join(__dirname, 'ocr_config.yaml')}`);
+            let pypdf_response = await execAsync(`pypdfocr '${file}' -c  ${path.join(__dirname, 'ocr_config.yaml')}`);
             if (pypdf_response.toString().includes('Completed conversion successfully')) {
               await moveAsync(`${file.replace(/\.pdf$/g, '_ocr.pdf')}`, path.join(dir, 'ocred', `${path.basename(file).replace(/\.pdf$/g, '_ocr.pdf')}`));
               await unlinkAsync(path.join(dir, `${path.basename(file)}`));

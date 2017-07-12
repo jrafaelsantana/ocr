@@ -1,0 +1,4 @@
+tesseract:
+    threads: 8
+preprocess:
+    threads: 8
