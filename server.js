@@ -7,7 +7,7 @@ const express = require('express'),
   fs = require('fs'),
   exec = require("child_process").exec,
   cors = require('cors'),
-  io = require('socket.io').listen(server),
+  io = require('socket.io')(server),
   formidable = require('formidable'),
   mkdirp = require('mkdirp'),
   tesseract = require('node-tesseract'),
@@ -22,7 +22,7 @@ app.use(cors({
 // app.get('/', function (req, res) {
 //   res.sendFile(path.join(__dirname, '/dist/index.html'));
 // });
-app.post('/upload', (req, res) => {
+app.post('/upload', function (req, res) {
   // create an incoming form object
   let form = new formidable.IncomingForm();
   // specify that we want to allow the user to upload multiple files in a single request
@@ -33,7 +33,8 @@ app.post('/upload', (req, res) => {
   form.uploadDir = path.join(__dirname, `uploads/${(req.connection.remoteAddress).replace(/(::ffff:)|(::)/g, '')}`);
   mkdirp(form.uploadDir);
   mkdirp(path.join(form.uploadDir, 'ocred'));
-  form.on('fileBegin', (name, file) => {
+  let targetUser = req.connection.remoteAddress;
+  form.on('fileBegin', function (name, file) {
     let re = new RegExp("(?:.+?\/)(.+)");
     if (re.test(file.name)) {
       file.path = path.join(form.uploadDir, re.exec(file.name)[1]);
@@ -42,28 +43,45 @@ app.post('/upload', (req, res) => {
     }
   });
   form.on('file', function (name, file) {
-    let targetUser = req.connection.remoteAddress;
-    connectedUsers[targetUser].emit('event', {
-      'event': 'fileRecieved',
-      'file': file.name
-    });
+    try {
+      connectedUsers[targetUser].emit('event', {
+        'event': 'fileRecieved',
+        'file': file.name
+      });
+    } catch (error) {
+      console.log(error);
+      io.emit('event', {
+        'event': 'ocrError',
+        'error': 'Connection Unstable'
+      });
+      emptyDir(dir);
+    }
   });
   // log any errors that occur
-  form.on('error', (err) => {
-    connectedUsers[targetUser].emit('event', {
-      'event': 'ocrError',
-      'error': err
-    });
+  form.on('error', function (err) {
+    try {
+      connectedUsers[targetUser].emit('event', {
+        'event': 'ocrError',
+        'error': err
+      });
+    } catch (error) {
+      console.log(error);
+      io.emit('event', {
+        'event': 'ocrError',
+        'error': error
+      });
+      emptyDir(dir);
+    }
   });
   // once all the files have been uploaded, send a response to the client
-  form.on('end', () => {
+  form.on('end', function () {
     res.end('success');
     // results is now an array of stats for each file
   });
   // parse the incoming request containing the form data
   form.parse(req);
 });
-app.get('/download', (req, res) => {
+app.get('/download', function (req, res) {
   let dir = path.join(__dirname, 'uploads', `${(req.connection.remoteAddress).replace(/(::ffff:)|(::)/g, '')}`, 'ocred');
   zipFolder(dir, `${dir}.zip`, function (err) {
     if (err) {
@@ -75,7 +93,7 @@ app.get('/download', (req, res) => {
       var filestream = fs.createReadStream(`${dir}.zip`);
       filestream.pipe(res);
       // res.download(`${dir}.zip`);
-      fs.unlink(`${dir}.zip`, (err) => {
+      fs.unlink(`${dir}.zip`, function (err) {
         if (err) {
           console.log('oh no!', err);
         }
@@ -83,13 +101,16 @@ app.get('/download', (req, res) => {
     }
   });
 })
-server.listen(3000, () => {
+server.listen(3000, function () {
   console.log('Server listening on port 3000');
 });
-io.on('connection', (socket) => {
+io.on('connection', function (socket) {
   const targetUser = socket.request.headers['x-forwarded-for'] || socket.request.connection.remoteAddress;
   console.log(targetUser + " joined");
   connectedUsers[targetUser] = socket;
+  connectedUsers[targetUser].emit('event', {
+    'event': 'connect_established'
+  });
   connectedUsers[targetUser].on('startProcess', async function () {
     console.log("process started");
     let dir = path.join(__dirname, `uploads/${(socket.request.connection.remoteAddress).replace(/(::ffff:)|(::)/g, '')}`);
@@ -141,7 +162,7 @@ io.on('connection', (socket) => {
               'file': path.basename(file)
             });
             console.log("processing pdf " + file);
-            let pypdf_response = await execAsync(`pypdfocr ${file}`);
+            let pypdf_response = await execAsync(`pypdfocr '${file}'`);
             if (pypdf_response.toString().includes('Completed conversion successfully')) {
               await moveAsync(`${file.replace(/\.pdf$/g, '_ocr.pdf')}`, path.join(dir, 'ocred', `${path.basename(file).replace(/\.pdf$/g, '_ocr.pdf')}`));
               await unlinkAsync(path.join(dir, `${path.basename(file)}`));
@@ -159,6 +180,7 @@ io.on('connection', (socket) => {
         'event': 'ocrError',
         'error': error
       });
+      emptyDir(dir);
     }
   });
 });
@@ -199,6 +221,17 @@ function unlinkAsync(file) {
   });
 }
 
+function emptyDir(path) {
+  if (fs.existsSync(path)) {
+    fs.readdirSync(path).forEach(function (file, index) {
+      let curPath = path + "/" + file;
+      if (!fs.lstatSync(curPath).isDirectory()) {
+        fs.unlinkSync(curPath);
+      }
+    });
+  }
+}
+
 function moveAsync(oldpath, newpath) {
   return new Promise(function (resolve, reject) {
     fs.rename(oldpath, newpath, function (error, result) {
@@ -213,7 +246,7 @@ function moveAsync(oldpath, newpath) {
 
 function tesseractAsync(file) {
   return new Promise(function (resolve, reject) {
-    tesseract.process(file, (error, result) => {
+    tesseract.process(file, function (error, result) {
       if (error) {
         reject(error);
       } else {
@@ -225,7 +258,7 @@ function tesseractAsync(file) {
 
 function execAsync(cmd) {
   return new Promise(function (resolve, reject) {
-    exec(cmd, (error, result) => {
+    exec(cmd, function (error, result) {
       if (error) {
         reject(error);
       } else {

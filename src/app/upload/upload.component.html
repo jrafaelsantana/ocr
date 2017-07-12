@@ -1,13 +1,19 @@
 <div class="container">
 
   <div class="navbar navbar-default">
-    <div class="navbar-header">
-      <a class="navbar-brand" href>Ocrify</a>
+    <div class="container-fluid">
+      <div class="navbar-header">
+        <a class="navbar-brand" href>Ocrify</a>
+      </div>
     </div>
   </div>
 
   <div class="row">
-
+    <div class="col-md-12" *ngIf="disabled_order == undefined">
+      <h3>Convert a scanned PDF or image file to a searchable PDF or a text file.</h3>
+      <h4>Accepted file extensions : pdf,jpg,png,jpeg,webp</h4>
+      <h5>Files with any other extension will be ignored.</h5>
+    </div>
     <div class="col-md-3" *ngIf="disabled_order == undefined">
 
       <h3>Select files</h3>
@@ -67,7 +73,7 @@
         <button *ngIf="disabled_order == undefined" type="button" class="btn btn-success btn-s" (click)="filter_upload()" [disabled]="!uploader.getNotUploadedItems().length">
                     <span class="glyphicon glyphicon-upload"></span> Upload
                 </button>
-        <button *ngIf="disabled_order === false" type="button" class="btn btn-success btn-s" (click)="reload()" [disabled]="disabled_order">
+        <button *ngIf="disabled_order === false" type="button" class="btn btn-success btn-s" (click)="_reload()" [disabled]="disabled_order">
                     <span class="glyphicon glyphicon-upload"></span> Upload Again
                 </button>
         <button *ngIf="!disabled_order" type="button" class="btn btn-info btn-s" (click)="initDownload()" [disabled]="disabled_order">
