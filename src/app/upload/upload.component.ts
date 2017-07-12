@@ -99,9 +99,8 @@ export class UploadComponent implements OnInit, OnDestroy {
     this.disabled_order = true;
   }
   initDownload() {
-    const link = document.createElement('a');
-    link.href = 'http://mtcocr:3000/download';
-    link.download = 'Ocred.zip';
+    const link = document.getElementById('download');
+    link.setAttribute('href', 'http://mtcocr:3000/download');
     link.click();
   }
   reload() {
