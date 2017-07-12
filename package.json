@@ -1,13 +1,15 @@
 {
   "name": "ocr",
-  "version": "0.0.0",
+  "version": "1.0.0",
+  "engines": {
+    "node": ">=7.6.0"
+  },
   "license": "MIT",
   "scripts": {
     "ng": "ng",
-    "start": "ng serve",
-    "build": "ng build --prod --base-href /ocr/",
-    "lint": "ng lint",
-    "e2e": "ng e2e"
+    "requirements-check": "node check-version.js",
+    "start": "npm run requirements-check &&  ng serve",
+    "build": "npm run requirements-check && ng build --prod --base-href /ocr/"
   },
   "private": true,
   "dependencies": {
@@ -26,6 +28,7 @@
     "ng2-file-upload": "^1.2.1",
     "node-tesseract": "^0.2.7",
     "rxjs": "^5.1.0",
+    "semver": "^5.3.0",
     "socket.io": "^2.0.3",
     "zip-folder": "^1.0.0",
     "zone.js": "^0.8.4"
