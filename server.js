@@ -18,18 +18,11 @@ app.use(cors({
   'origin': 'http://mtcocr',
   'credentials': true,
 }));
-// app.use(express.static(path.join(__dirname, 'dist')));
-// app.get('/', function (req, res) {
-//   res.sendFile(path.join(__dirname, '/dist/index.html'));
-// });
 app.post('/upload', function (req, res) {
-  // create an incoming form object
   let form = new formidable.IncomingForm();
-  // specify that we want to allow the user to upload multiple files in a single request
   form.multiples = true;
   form.keepExtensions = true;
   form.hash = false;
-  // store all uploads in the /uploads directory
   form.uploadDir = path.join(__dirname, `uploads/${(req.connection.remoteAddress).replace(/(::ffff:)|(::)/g, '')}`);
   mkdirp(form.uploadDir);
   mkdirp(path.join(form.uploadDir, 'ocred'));
@@ -57,7 +50,6 @@ app.post('/upload', function (req, res) {
       emptyDir(form.uploadDir);
     }
   });
-  // log any errors that occur
   form.on('error', function (err) {
     try {
       connectedUsers[targetUser].emit('event', {
@@ -73,29 +65,31 @@ app.post('/upload', function (req, res) {
       emptyDir(dir);
     }
   });
-  // once all the files have been uploaded, send a response to the client
   form.on('end', function () {
     res.end('success');
-    // results is now an array of stats for each file
   });
-  // parse the incoming request containing the form data
   form.parse(req);
 });
 app.get('/download', function (req, res) {
   let dir = path.join(__dirname, 'uploads', `${(req.connection.remoteAddress).replace(/(::ffff:)|(::)/g, '')}`, 'ocred');
   zipFolder(dir, `${dir}.zip`, function (err) {
     if (err) {
-      console.log('oh no!', err);
+      io.emit('event', {
+        'event': 'ocrError',
+        'error': err
+      });
     } else {
       res.setHeader('Content-disposition', 'attachment; filename=' + 'ocred.zip');
       res.setHeader('Content-type', 'application/octet-stream');
       res.setHeader('Transfer-Encoding', 'chunked');
       var filestream = fs.createReadStream(`${dir}.zip`);
       filestream.pipe(res);
-      // res.download(`${dir}.zip`);
       fs.unlink(`${dir}.zip`, function (err) {
         if (err) {
-          console.log('oh no!', err);
+          io.emit('event', {
+            'event': 'ocrError',
+            'error': err
+          });
         }
       });
     }
@@ -111,17 +105,22 @@ io.on('connection', function (socket) {
   connectedUsers[targetUser].emit('event', {
     'event': 'connect_established'
   });
+  connectedUsers[targetUser].on('CheckOldFiles', function () {
+    connectedUsers[targetUser].emit('event', {
+      'event': 'oldFilesCheck',
+      'hasOldFiles': fs.readdirSync(path.join(__dirname, 'uploads', `${(socket.request.connection.remoteAddress).replace(/(::ffff:)|(::)/g, '')}`, 'ocred')).length > 0 ? true : false
+    });
+  });
   connectedUsers[targetUser].on('startProcess', async function () {
+    await emptyDir(path.join(__dirname, 'uploads', `${(socket.request.connection.remoteAddress).replace(/(::ffff:)|(::)/g, '')}`, 'ocred'));
     console.log("process started");
     let dir = path.join(__dirname, `uploads/${(socket.request.connection.remoteAddress).replace(/(::ffff:)|(::)/g, '')}`);
     try {
-
-
       let files = await readdirAsync(dir);
       for (let file of files) {
         console.log(file);
         file = path.join(dir, file);
-        if (/\.(gif|jpe?g|png|webp)$/i.test(file)) {
+        if (/\.(jpe?g|png|webp)$/i.test(file)) {
           console.log("processing image " + file);
           connectedUsers[targetUser].emit('event', {
             'event': 'checkStarted',
@@ -146,8 +145,8 @@ io.on('connection', function (socket) {
             'event': 'checkStarted',
             'file': path.basename(file)
           });
-          // let check = await execAsync(`python check.py '${file}'`);
-          let check = 'False';
+          let check = await execAsync(`python check.py '${file}'`);
+          console.log("check", check);
           if (check.toString().trim().includes('True')) {
             console.log("check_stdout:" + check);
             connectedUsers[targetUser].emit('event', {

@@ -10,3 +10,10 @@
   .another-file-over-class {
     border: dotted 3px green;
   }
+
+  .preocred {
+    font-size: 15px;
+    font-weight: 800;
+    background: beige;
+    color: chocolate;
+  }

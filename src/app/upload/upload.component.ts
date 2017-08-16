@@ -2,7 +2,7 @@ import { Component, OnInit, OnDestroy } from '@angular/core';
 import { FileUploader } from 'ng2-file-upload';
 import { SocketService } from '../socket.service';
 import { ISubscription } from 'rxjs/Subscription';
-const URL = 'http://localhost:3000/upload';
+const URL = 'http://mtcocr:3000/upload';
 
 @Component({
   selector: 'app-upload',
@@ -14,6 +14,7 @@ export class UploadComponent implements OnInit, OnDestroy {
   public hasBaseDropZoneOver = false;
   public fileStat: any = {};
   public disabled_order: boolean = undefined;
+  public OldFiles: boolean = undefined;
   public files_processed_count = 0;
   public files_uploaded_count = 0;
   public files_received_count = 0;
@@ -44,7 +45,7 @@ export class UploadComponent implements OnInit, OnDestroy {
             this.setStatus(data['file'], '40', 'Checking');
             break;
           case 'startingOcr':
-            this.setStatus(data['file'], '60', 'Processing');
+            this.setStatus(data['file'], '80', 'Processing, sit back and relax.');
             break;
           case 'ocrComplete':
             this.files_processed_count += 1;
@@ -55,10 +56,13 @@ export class UploadComponent implements OnInit, OnDestroy {
             break;
           case 'preOcred':
             this.files_processed_count += 1;
-            this.setStatus(data['file'], '100', 'Already Ocred');
+            this.setStatus(data['file'], '100', 'Ocr not required');
             if (this.files_processed_count === this.files_uploaded_count) {
               this.enableUpload();
             }
+            break;
+          case 'oldFilesCheck':
+            data['hasOldFiles'] ? this.OldFiles = true : this.OldFiles = false;
             break;
           case 'ocrError':
             this.handle_error(JSON.stringify(data['error']));
@@ -67,7 +71,7 @@ export class UploadComponent implements OnInit, OnDestroy {
             break;
         }
       });
-
+    this.socketService.emitEvent('CheckOldFiles');
   }
   ngOnDestroy() {
     this.subscription.unsubscribe();
@@ -97,11 +101,11 @@ export class UploadComponent implements OnInit, OnDestroy {
     };
   }
   enableUpload() {
+    this.socketService.emitEvent('CheckOldFiles');
     this.disabled_order = false;
     this.files_processed_count = 0;
     this.files_uploaded_count = 0;
     this.files_received_count = 0;
-    alert('Converted files are ready to download');
   }
   disableUpload() {
     this.disabled_order = true;

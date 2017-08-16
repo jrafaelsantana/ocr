@@ -6,7 +6,7 @@ import * as io from 'socket.io-client';
 @Injectable()
 export class SocketService {
 
-  private url = 'http://localhost:3000';
+  private url = 'http://mtcocr:3000';
   private socket;
   emitEvent(name: string, data?: any) {
     if (data) {

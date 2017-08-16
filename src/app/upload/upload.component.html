@@ -14,7 +14,7 @@
       <h4>Accepted file extensions : pdf,jpg,png,jpeg,webp</h4>
       <h5>Files with any other extension will be ignored.</h5>
     </div>
-    <div class="col-md-3" *ngIf="disabled_order == undefined">
+    <div class="col-md-2" *ngIf="disabled_order == undefined">
 
       <h3>Select files</h3>
 
@@ -27,7 +27,7 @@
       <input type="file" ng2FileSelect accept="application/pdf,.jpg,.png,.jpeg,.webp" [uploader]="uploader" multiple />
     </div>
 
-    <div class="col-md-9" style="margin-bottom: 40px">
+    <div class="col-md-10" style="margin-bottom: 40px">
 
       <h3>Upload queue</h3>
       <p>Files Processed: {{files_processed_count+' / '+uploader?.queue?.length }}</p>
@@ -48,14 +48,14 @@
             <td *ngIf="item?.options?.isHTML5" nowrap>{{ item?.file?.size/1024/1024 | number:'.2' }} MB</td>
             <td *ngIf="item?.options?.isHTML5">
               <div class="progress" style="margin-bottom: 0;">
-                <div class="progress-bar progress-bar-striped progress-bar-success active" role="progressbar" aria-valuemin="0" aria-valuemax="100"
-                  [ngStyle]="{ 'width': fileStat[item.file.name]?.progress + '%' }">
+                <div *ngIf="fileStat[item.file.name]?.stat !== 'Ocr not required'" class="progress-bar progress-bar-striped progress-bar-success active"
+                  role="progressbar" aria-valuemin="0" aria-valuemax="100" [ngStyle]="{ 'width': fileStat[item.file.name]?.progress + '%' }">
                   {{fileStat[item.file.name]?.progress + '%'}}
                 </div>
               </div>
             </td>
             <td class="text-center">
-              <span *ngIf="item.isSuccess">{{fileStat[item.file.name]?.stat}}</span>
+              <span *ngIf="item.isSuccess" [ngClass]="{'preocred': fileStat[item.file.name]?.stat === 'Ocr not required' }">{{fileStat[item.file.name]?.stat}}</span>
               <span *ngIf="item.isCancel"><i class="glyphicon glyphicon-ban-circle"></i></span>
               <span *ngIf="item.isError"><i class="glyphicon glyphicon-remove"></i></span>
             </td>
@@ -70,14 +70,15 @@
       </table>
 
       <div>
-        <button *ngIf="disabled_order == undefined" type="button" class="btn btn-success btn-s" (click)="filter_upload()" [disabled]="!uploader.getNotUploadedItems().length">
-                    <span class="glyphicon glyphicon-upload"></span> Upload
+        <button *ngIf="disabled_order == undefined && uploader.getNotUploadedItems().length" type="button" class="btn btn-success btn-s"
+          (click)="filter_upload()">
+                    <span class="glyphicon glyphicon-upload"></span> Start
                 </button>
-        <button *ngIf="disabled_order === false" type="button" class="btn btn-success btn-s" (click)="_reload()" [disabled]="disabled_order">
-                    <span class="glyphicon glyphicon-upload"></span> Upload Again
+        <button *ngIf="disabled_order === false" type="button" class="btn btn-success btn-s" (click)="_reload()">
+                    <span class="glyphicon glyphicon-upload"></span> Start over
                 </button>
-        <button *ngIf="!disabled_order" type="button" class="btn btn-info btn-s" (click)="initDownload()" [disabled]="disabled_order">
-                    <span class="glyphicon glyphicon-download"></span> Download
+        <button *ngIf="OldFiles === true && !disabled_order" type="button" class="btn btn-info btn-s" (click)="initDownload()">
+                    <span class="glyphicon glyphicon-download"></span> Save files to desktop
                 </button>
       </div>
 
